@@ -1,0 +1,320 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aimer</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: white;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* BLACK INTRO FADE */
+        .intro-fade {
+            position: fixed;
+            inset: 0;
+            background: black;
+            z-index: 9999;
+            pointer-events: none;
+            animation: blackFade 2.5s ease forwards;
+        }
+
+        @keyframes blackFade {
+            from { opacity: 1; visibility: visible; }
+            to { opacity: 0; visibility: hidden; }
+        }
+
+        /* STATIC LOGO */
+        .logo {
+            position: absolute;
+            top: 35px;
+            left: 40px;
+            width: 100px;
+        }
+
+        .logo img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* BOOK CONTAINER */
+        .book-container {
+            width: 300px;
+            height: 450px;
+            perspective: 1500px;
+            animation: bookIntro 2.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        /* BOOK INTRO */
+        @keyframes bookIntro {
+            0% {
+                opacity: 0;
+                transform: scale(2.4) translateY(60px);
+            }
+
+            45% { opacity: 1; }
+
+            100% {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        /* BOOK */
+        .book {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 1s ease;
+        }
+
+        /* MAIN PAGE */
+        .main-page {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            cursor: pointer;
+            background: white;
+        }
+
+        /* COVER */
+        .cover {
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            transform-origin: left center;
+            transform-style: preserve-3d;
+            transition: transform 1s ease;
+        }
+
+        /* COVER SIDES */
+        .cover-front,
+        .cover-back {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+        }
+
+        /* IMAGE FIT */
+        .cover-front img,
+        .cover-back img,
+        .main-page img {
+            width: 100%;
+            height: 100%;
+            object-fit: fill;
+            display: block;
+        }
+
+        /* BACK COVER */
+        .cover-back {
+            transform: rotateY(180deg);
+        }
+
+        /* HOVER ANIMATION */
+        .book-container:hover .cover {
+            transform: rotateY(-180deg);
+        }
+
+        .book-container:hover .book {
+            transform: translateX(75px);
+        }
+
+        /* MOBILE */
+        @media (max-width: 600px) {
+            .logo {
+                top: 20px;
+                left: 20px;
+                width: 75px;
+            }
+
+            .book-container {
+                width: 230px;
+                height: 345px;
+            }
+
+            .book-container:hover .book {
+                transform: translateX(45px);
+            }
+        }
+
+        /* ACCESSIBILITY */
+        @media (prefers-reduced-motion: reduce) {
+            .intro-fade,
+            .book-container {
+                animation-duration: 0.5s;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- BLACK INTRO -->
+    <div class="intro-fade"></div>
+
+    <!-- LOGO -->
+    <div class="logo">
+        <img
+            src="https://aaronthecarter.github.io/Aimer/AimerLogo.png"
+            alt="Aimer Logo"
+        >
+    </div>
+
+    <!-- BOOK -->
+    <div class="book-container">
+        <div class="book">
+
+            <!-- MAIN PAGE -->
+            <div class="main-page" onclick="openBook()">
+                <img
+                    src="https://aaronthecarter.github.io/Aimer/notdone.png"
+                    alt="Open Aimer"
+                >
+            </div>
+
+            <!-- COVER -->
+            <div class="cover">
+
+                <!-- FRONT -->
+                <div class="cover-front">
+                    <img
+                        src="https://aaronthecarter.github.io/Aimer/AimerCover.png"
+                        alt="Aimer Front Cover"
+                    >
+                </div>
+
+                <!-- BACK -->
+                <div class="cover-back">
+                    <img
+                        src="https://aaronthecarter.github.io/Aimer/Dear,%20you...%20.png"
+                        alt="Dear, you..."
+                    >
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- SOUND + PDF + CLOSE ORIGINAL TAB -->
+    <script>
+
+        // PAGE-TURN SOUND
+        function playPageSound() {
+            const audioContext = new (
+                window.AudioContext || window.webkitAudioContext
+            )();
+
+            const duration = 0.22;
+
+            const buffer = audioContext.createBuffer(
+                1,
+                audioContext.sampleRate * duration,
+                audioContext.sampleRate
+            );
+
+            const data = buffer.getChannelData(0);
+
+            for (let i = 0; i < data.length; i++) {
+                data[i] = (Math.random() * 2 - 1) *
+                    Math.pow(1 - i / data.length, 3);
+            }
+
+            const source = audioContext.createBufferSource();
+            source.buffer = buffer;
+
+            const filter = audioContext.createBiquadFilter();
+            filter.type = "lowpass";
+            filter.frequency.value = 1400;
+
+            const volume = audioContext.createGain();
+            volume.gain.setValueAtTime(
+                0.12,
+                audioContext.currentTime
+            );
+
+            volume.gain.exponentialRampToValueAtTime(
+                0.001,
+                audioContext.currentTime + duration
+            );
+
+            source.connect(filter);
+            filter.connect(volume);
+            volume.connect(audioContext.destination);
+
+            source.start();
+        }
+
+        // OPEN PDF AND CLOSE ORIGINAL WEBSITE
+        function openBook() {
+
+            playPageSound();
+
+            const newTab = window.open("about:blank", "_blank");
+
+            if (newTab) {
+
+                newTab.document.write(`
+                    <!DOCTYPE html>
+                    <html lang="en">
+                    <head>
+                        <title>Thank you for visiting!</title>
+
+                        <style>
+                            * {
+                                margin: 0;
+                                padding: 0;
+                                border: none;
+                            }
+
+                            html, body {
+                                width: 100%;
+                                height: 100%;
+                                overflow: hidden;
+                                background: white;
+                            }
+
+                            iframe {
+                                width: 100%;
+                                height: 100%;
+                                border: none;
+                            }
+                        </style>
+                    </head>
+
+                    <body>
+                        <iframe
+                            src="https://aaronthecarter.github.io/Aimer/Aimer.pdf"
+                            allowfullscreen
+                        ></iframe>
+                    </body>
+                    </html>
+                `);
+
+                newTab.document.close();
+
+                // ATTEMPT TO CLOSE THE ORIGINAL WEBSITE
+                window.close();
+            }
+        }
+
+    </script>
+
+</body>
+</html>
